@@ -1,0 +1,68 @@
+name: Run notebook & deploy dashboard
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          python -m ipykernel install --user --name python3
+
+      - name: Execute notebook (regenerates results_model_and_business/)
+        run: |
+          jupyter nbconvert --to notebook --execute Bank_Model_Storytelling.ipynb \
+            --ExecutePreprocessor.timeout=1800 \
+            --ExecutePreprocessor.kernel_name=python3 \
+            --output-dir build --output executed
+
+      - name: Render executed notebook to HTML
+        run: jupyter nbconvert --to html build/executed.ipynb --output-dir build --output notebook
+
+      - name: Build dashboard
+        run: python site/build_site.py --notebook-html build/notebook.html --out _site
+
+      - name: Keep executed notebook + results as a downloadable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: results
+          path: |
+            build/executed.ipynb
+            results_model_and_business/
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

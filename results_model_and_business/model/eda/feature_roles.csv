@@ -1,0 +1,7 @@
+variables,role,reason
+"age, job, marital, education, default, housing, loan, pdays, previous, poutcome",Used: pre-contact,Customer profile and previous-campaign history
+duration,Excluded: post-call,Only known after the call ends (see 5.4)
+campaign,Excluded from model,Includes the current contact (used descriptively in 5.1)
+"contact, month, day_of_week",Context only,"Channel/schedule may not be set at selection (see 5.2, 5.6)"
+"emp.var.rate, cons.price.idx, cons.conf.idx, euribor3m, nr.employed",Tested as Model B,Previous-month values (appendix A)
+y,Outcome,"Historical subscription, never a predictor"

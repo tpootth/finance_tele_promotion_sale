@@ -1,0 +1,10 @@
+model,target_recall,required_fraction
+Logistic regression 10.0,0.3,0.21
+Logistic regression 10.0,0.5,0.41
+Logistic regression 10.0,0.7,0.62
+History rule,0.3,0.35
+History rule,0.5,0.54
+History rule,0.7,0.72
+Random expected,0.3,0.31
+Random expected,0.5,0.5
+Random expected,0.7,0.71

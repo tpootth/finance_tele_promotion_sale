@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Call Prioritization — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="vendor/plotly.min.js"></script>
+<script src="vendor/marked.min.js"></script>
+<style>
+:root{
+  color-scheme:light;
+  --bg:#f4f3ef; --surface:#fcfcfb; --border:#e3e1da;
+  --text:#0b0b0b; --text2:#52514e; --muted:#8a8984; --grid:#ecebe6;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --neutral:#9a9993;
+  --good:#0a7d32; --accent:#2a78d6;
+}
+@media (prefers-color-scheme:dark){
+  :root:where(:not([data-theme="light"])){
+    color-scheme:dark;
+    --bg:#121211; --surface:#1a1a19; --border:#2e2e2c;
+    --text:#f0efec; --text2:#c3c2b7; --muted:#8f8e86; --grid:#2a2a28;
+    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --neutral:#77766f;
+    --good:#3fbf6a; --accent:#3987e5;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#121211; --surface:#1a1a19; --border:#2e2e2c;
+  --text:#f0efec; --text2:#c3c2b7; --muted:#8f8e86; --grid:#2a2a28;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --neutral:#77766f;
+  --good:#3fbf6a; --accent:#3987e5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans Thai",system-ui,sans-serif;line-height:1.55}
+header{padding:40px 24px 24px;max-width:1200px;margin:0 auto}
+header h1{margin:0 0 6px;font-size:30px;letter-spacing:-.02em}
+header p{margin:0;color:var(--text2);max-width:780px}
+.meta{font-size:13px;color:var(--muted);margin-top:10px}
+nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+nav .in{max-width:1200px;margin:0 auto;padding:10px 24px;display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+nav a{color:var(--text2);text-decoration:none;font-size:14px;padding:5px 10px;border-radius:6px}
+nav a:hover{background:var(--surface);color:var(--text)}
+nav .sp{flex:1}
+button.theme{border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:6px;padding:5px 10px;cursor:pointer;font:inherit;font-size:13px}
+main{max-width:1200px;margin:0 auto;padding:12px 24px 60px}
+section{margin:36px 0}
+section>h2{font-size:21px;margin:0 0 4px;letter-spacing:-.01em}
+section>.lede{color:var(--text2);margin:0 0 16px;max-width:820px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+.card h3{margin:0 0 2px;font-size:15px}
+.card .sub{margin:0 0 8px;color:var(--text2);font-size:13px}
+.tile .lab{font-size:13px;color:var(--text2)}
+.tile .val{font-size:30px;font-weight:700;letter-spacing:-.02em;margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.tile .ctx{font-size:13px;color:var(--muted)}
+.tile .ctx b{color:var(--good);font-weight:600}
+.chart{width:100%;height:340px}
+.chart.tall{height:420px}
+.controls{display:flex;gap:14px;flex-wrap:wrap;margin:4px 0 10px;align-items:end}
+.controls label{font-size:12px;color:var(--text2);display:flex;flex-direction:column;gap:4px}
+select{font:inherit;font-size:14px;padding:6px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg);color:var(--text)}
+.callout{font-size:14px;color:var(--text2);background:var(--bg);border-radius:8px;padding:10px 12px;margin-top:8px}
+.callout b{color:var(--text)}
+.md table{border-collapse:collapse;width:100%;font-size:14px;margin:8px 0}
+.md th,.md td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top}
+.md th{color:var(--text2);font-weight:600;background:var(--bg)}
+.md p{margin:8px 0}
+.md h3{font-size:16px;margin:18px 0 6px}
+.overflow{overflow-x:auto}
+table.data{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}
+table.data th,table.data td{border-bottom:1px solid var(--border);padding:8px 10px;text-align:right}
+table.data th:first-child,table.data td:first-child{text-align:left}
+table.data th{color:var(--text2);font-weight:600}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.gallery figure{margin:0;background:#fcfcfb;border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:zoom-in}
+.gallery img{width:100%;display:block;aspect-ratio:4/3;object-fit:contain;background:#fcfcfb}
+.gallery figcaption{font-size:12px;color:#52514e;padding:6px 10px;border-top:1px solid #e3e1da}
+.chips{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.chip{border:1px solid var(--border);background:var(--surface);color:var(--text2);border-radius:999px;padding:4px 12px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--text);color:var(--surface);border-color:var(--text)}
+#lightbox{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:20;cursor:zoom-out;padding:24px}
+#lightbox img{max-width:100%;max-height:100%;border-radius:8px;background:#fcfcfb}
+.btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:600;font-size:14px;margin-right:8px}
+.btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
+footer{color:var(--muted);font-size:13px;max-width:1200px;margin:0 auto;padding:0 24px 40px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Bank Call Prioritization</h1>
+  <p>ใครควรได้รับสายเสนอเงินฝากประจำก่อน โทรกี่ราย กี่ครั้ง ผ่านช่องทางไหน — แดชบอร์ดจากโมเดลและสถานการณ์ธุรกิจ บนข้อมูล UCI Bank Marketing (41,188 รายการ, โปรตุเกส 2008–2010)</p>
+  <div class="meta" id="meta"></div>
+</header>
+<nav><div class="in">
+  <a href="#overview">ภาพรวม</a><a href="#data">ข้อมูล</a><a href="#model">โมเดล</a><a href="#business">ธุรกิจ</a><a href="#tactics">กลยุทธ์</a><a href="#stp">STP &amp; 4Ps</a><a href="#figures">กราฟทั้งหมด</a>
+  <span class="sp"></span><button class="theme" id="themeBtn">Theme</button>
+</div></nav>
+<main>
+
+<section id="overview">
+  <h2>ภาพรวม</h2>
+  <p class="lede">ผลบนชุด Test (ช่วงเวลาล่าสุด) ของโมเดลหลักที่เลือกจาก Validation</p>
+  <div class="grid g4" id="tiles"></div>
+  <div class="card md" style="margin-top:16px" id="exec"></div>
+</section>
+
+<section id="data">
+  <h2>ข้อมูลเปลี่ยนไปตามเวลา</h2>
+  <p class="lede">จำนวนสายลดลงมากหลังปี 2008 ขณะที่อัตราสมัครสูงขึ้น — จึงแบ่ง Train / Validation / Test ตามเวลา และอ่านผลแต่ละช่วงแยกกัน</p>
+  <div class="grid g2">
+    <div class="card"><h3>จำนวนรายการต่อเดือน</h3><p class="sub">records</p><div class="chart" id="c_tl_n"></div></div>
+    <div class="card"><h3>อัตราสมัครต่อเดือน</h3><p class="sub">subscription rate</p><div class="chart" id="c_tl_r"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px"><h3>อัตราสมัครตามอาชีพ (Train)</h3><p class="sub">พร้อมช่วงความเชื่อมั่น 95%</p><div class="chart" id="c_job"></div></div>
+</section>
+
+<section id="model">
+  <h2>โมเดลจัดอันดับรายชื่อ</h2>
+  <p class="lede" id="modelLede"></p>
+  <div class="grid g2">
+    <div class="card"><h3>คุณภาพการจัดอันดับบน Test</h3><p class="sub">Average precision และ ROC AUC; เส้นประ = AP ของการสุ่ม (อัตราสมัครพื้นฐาน)</p><div class="chart" id="c_models"></div></div>
+    <div class="card"><h3>ผู้สมัครต่อ 1,000 สาย (โทร 20% แรก)</h3><p class="sub">Test, จำนวนรายชื่อเท่ากัน</p><div class="chart" id="c_kpi"></div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <h3>ถ้าโทร X% แรกของรายชื่อ จะเจอผู้สมัครเท่าไร?</h3>
+    <div class="controls"><label>ตัวชี้วัด<select id="capMetric">
+      <option value="found">ผู้สมัครที่พบ (ราย)</option>
+      <option value="precision">อัตราสมัครในรายชื่อที่โทร</option>
+      <option value="recall">สัดส่วนผู้สมัครทั้งหมดที่พบ (recall)</option>
+      <option value="lift">Lift เทียบการสุ่ม</option></select></label></div>
+    <div class="chart tall" id="c_cap"></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+    <div class="card"><h3>อัตราสมัครตามช่วงคะแนน</h3><p class="sub">กลุ่มคะแนนสูงสุด 10% → ต่ำสุด</p><div class="chart" id="c_bands"></div></div>
+    <div class="card"><h3>ตัวแปรที่โมเดลพึ่งพา</h3><p class="sub">Permutation importance บน Validation (ลด AP เมื่อสลับค่า)</p><div class="chart" id="c_imp"></div></div>
+  </div>
+</section>
+
+<section id="business">
+  <h2>สถานการณ์ธุรกิจ: ควรโทรกี่ราย?</h2>
+  <p class="lede">เลือกต้นทุนและมูลค่า เพื่อดูมูลค่าสุทธิบน Test ของแต่ละนโยบาย (ตัวเลขเป็นการคำนวณย้อนหลัง ไม่ใช่กำไรเชิงเหตุ)</p>
+  <div class="card">
+    <div class="controls">
+      <label>ค่าโทรต่อสาย (บาท)<select id="sCost"></select></label>
+      <label>จำนวนสายต่อลูกค้า<select id="sCalls"></select></label>
+      <label>มูลค่าต่อผู้สมัคร (บาท)<select id="sValue"></select></label>
+    </div>
+    <div class="grid g2">
+      <div class="chart" id="c_scen_test"></div>
+      <div class="chart" id="c_scen_val"></div>
+    </div>
+    <div class="callout" id="scenNote"></div>
+  </div>
+</section>
+
+<section id="tactics">
+  <h2>กี่ครั้ง ผ่านช่องทางไหน ให้ใคร</h2>
+  <div class="grid g2">
+    <div class="card"><h3>อัตราสมัครต่อสาย ตามลำดับสายที่โทร</h3><p class="sub">โทรซ้ำได้ผลลดลง</p><div class="chart" id="c_call"></div></div>
+    <div class="card"><h3>มือถือ vs โทรศัพท์บ้าน</h3><p class="sub">อัตราสมัคร พร้อมช่วงความเชื่อมั่น 95%</p><div class="chart" id="c_chan"></div></div>
+    <div class="card"><h3>อัตราสมัครตามช่วงอายุ</h3><p class="sub">&lt;25 และ 60+ สูงกว่าค่าเฉลี่ยทุกช่วง</p><div class="chart" id="c_age"></div></div>
+    <div class="card"><h3>ขนาด A/B test ที่ต้องใช้</h3><p class="sub">จำนวนคนต่อกลุ่ม เพื่อเห็นอัตราสมัครเพิ่มขึ้น X จุด</p><div class="chart" id="c_ab"></div></div>
+  </div>
+  <div class="card md" style="margin-top:16px" id="insights"></div>
+</section>
+
+<section id="stp">
+  <h2>STP &amp; 4Ps</h2>
+  <div class="card" style="margin-bottom:16px"><h3>กลุ่มลูกค้า (K-means) บน Test</h3><p class="sub">สัดส่วนที่ติด 20% แรกของคะแนนโมเดล และอัตราสมัคร</p><div class="overflow"><table class="data" id="stpTable"></table></div></div>
+  <div class="card md" id="stpMd"></div>
+</section>
+
+<section id="figures">
+  <h2>กราฟทั้งหมดจากโน้ตบุ๊ก</h2>
+  <p class="lede">สร้างใหม่ทุกครั้งที่ GitHub Action รันโน้ตบุ๊ก — คลิกเพื่อขยาย</p>
+  <div style="margin-bottom:14px" id="links"></div>
+  <div class="chips" id="chips"></div>
+  <div class="gallery" id="gallery"></div>
+</section>
+</main>
+<footer id="foot"></footer>
+<div id="lightbox"><img alt=""></div>
+
+<script>
+const D = __DATA__;
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const fmt = (v, d=0) => Number(v).toLocaleString('en-US', {maximumFractionDigits:d, minimumFractionDigits:d});
+const pct = (v, d=1) => (v*100).toFixed(d) + '%';
+const SPLITS = ['Train','Validation','Test'];
+const SPLIT_TH = {Train:'Train', Validation:'Validation', Test:'Test'};
+
+function theme(){
+  return {s:[css('--s1'),css('--s2'),css('--s3'),css('--s4')], neutral:css('--neutral'),
+    text:css('--text'), text2:css('--text2'), muted:css('--muted'), grid:css('--grid'), surface:css('--surface')};
+}
+function layout(t, extra={}){
+  const base = {
+    margin:{l:56,r:16,t:10,b:44}, paper_bgcolor:'rgba(0,0,0,0)', plot_bgcolor:'rgba(0,0,0,0)',
+    font:{family:'Inter, "Noto Sans Thai", sans-serif', size:12, color:t.text2},
+    xaxis:{gridcolor:t.grid, linecolor:t.grid, zeroline:false, tickfont:{color:t.text2}},
+    yaxis:{gridcolor:t.grid, linecolor:t.grid, zeroline:false, tickfont:{color:t.text2}},
+    legend:{orientation:'h', y:1.12, x:0, font:{color:t.text2}},
+    hoverlabel:{bgcolor:t.surface, bordercolor:t.grid, font:{color:t.text, family:'Inter, "Noto Sans Thai", sans-serif'}},
+    bargap:.25, bargroupgap:.08, hovermode:'closest'
+  };
+  for (const k in extra){ base[k] = (typeof extra[k]==='object' && !Array.isArray(extra[k]) && base[k]) ? {...base[k], ...extra[k]} : extra[k]; }
+  return base;
+}
+const CFG = {displayModeBar:false, responsive:true};
+const plot = (id, data, lay) => Plotly.react(id, data, lay, CFG);
+const bar = (o, c) => ({type:'bar', marker:{color:c, line:{width:0}, cornerradius:4}, ...o});
+
+/* ---------- static text ---------- */
+const SHORT = {'Logistic regression 10.0':'Logistic<br>regression','Gradient boosting (6, 0.05)':'Gradient<br>boosting','Random forest (8, 20)':'Random<br>forest','History rule':'History<br>rule','Random list':'สุ่ม','Simple rule (past success first)':'กฎง่าย<br>(เคยตอบรับก่อน)','Model (logistic regression)':'โมเดล<br>(logistic regression)'};
+const sh = s => SHORT[s] || s;
+const S = D.summary, core = D.test_metrics.find(m => m.core_model) || D.test_metrics[0];
+$('#meta').textContent = `Model: ${S.base_model} · built ${D.built_at} · data SHA256 ${S.source_sha256.slice(0,12)}…`;
+$('#modelLede').textContent = `เลือกโมเดลจาก Average precision บน Validation (ไม่ใช้ต้นทุนในการเลือก) ได้ ${D.selection.core_model}; เทียบกับ Gradient boosting, Random forest และกฎง่าย ๆ "โทรคนที่เคยตอบรับก่อน"`;
+$('#exec').innerHTML = marked.parse(D.md.executive);
+$('#insights').innerHTML = '<h3>Insights จากข้อมูล</h3>' + marked.parse(D.md.insights);
+$('#stpMd').innerHTML = marked.parse(D.md.stp);
+$('#foot').innerHTML = `ข้อมูล: <a href="${S.source_url}" style="color:inherit">UCI Bank Marketing</a> · seed ${S.seed} · ${S.assumptions}. ทุกข้อเป็นความสัมพันธ์ย้อนหลัง ยังไม่ใช่ผลเชิงเหตุ.`;
+
+const kpiModel = D.kpi.find(k => k.method.startsWith('Model')), kpiRand = D.kpi.find(k => k.method.startsWith('Random'));
+const tiles = [
+  {lab:'Average precision (Test)', val:core.ap.toFixed(3), ctx:`สุ่ม = ${core.test_prevalence.toFixed(3)} · <b>×${(core.ap/core.test_prevalence).toFixed(2)}</b>`},
+  {lab:'ROC AUC (Test)', val:core.auc.toFixed(3), ctx:'0.5 = สุ่ม'},
+  {lab:'ผู้สมัครต่อ 1,000 สาย', val:fmt(kpiModel.per_1000_calls), ctx:`สุ่ม ${fmt(kpiRand.per_1000_calls)} · <b>lift ${kpiModel.lift_vs_random.toFixed(2)}×</b>`},
+  {lab:'มูลค่าสุทธิบน Test (สถานการณ์หลัก)', val:fmt(S.test_adaptive_net_value/1e6,2)+'M ฿', ctx:`เกณฑ์ปรับตามรอบ · สัดส่วนคงที่ ${fmt(S.test_net_value/1e6,2)}M ฿`},
+];
+$('#tiles').innerHTML = tiles.map(t => `<div class="card tile"><div class="lab">${t.lab}</div><div class="val">${t.val}</div><div class="ctx">${t.ctx}</div></div>`).join('');
+
+/* ---------- scenario selects ---------- */
+const uniq = k => [...new Set(D.scenarios.map(r => r[k]))].sort((a,b)=>a-b);
+const fill = (id, vals, def) => { $(id).innerHTML = vals.map(v => `<option value="${v}" ${v==def?'selected':''}>${fmt(v, v%1?1:0)}</option>`).join(''); };
+const baseSc = D.scenarios.find(r => r.scenario === S.base_scenario) || D.scenarios[0];
+fill('#sCost', uniq('cost_per_call'), baseSc.cost_per_call);
+fill('#sCalls', uniq('assumed_calls'), baseSc.assumed_calls);
+fill('#sValue', uniq('value_per_subscriber'), baseSc.value_per_subscriber);
+
+/* ---------- charts ---------- */
+function render(){
+  const t = theme();
+  const SC = {Train:t.s[0], Validation:t.s[1], Test:t.s[2]};
+
+  // timeline
+  const tl = D.timeline;
+  plot('c_tl_n', [bar({x:tl.map(r=>r.ym), y:tl.map(r=>r.records), name:'records', hovertemplate:'%{x}<br>%{y:,} records<extra></extra>'}, t.s[0])],
+       layout(t, {showlegend:false, margin:{b:64}, xaxis:{tickangle:-45}}));
+  plot('c_tl_r', [{type:'scatter', mode:'lines+markers', x:tl.map(r=>r.ym), y:tl.map(r=>r.rate), line:{color:t.s[0], width:2}, marker:{size:8, color:t.s[0], line:{color:t.surface, width:2}},
+        hovertemplate:'%{x}<br>%{y:.1%} subscribed<extra></extra>'}],
+       layout(t, {showlegend:false, margin:{b:64, r:24}, xaxis:{tickangle:-45}, yaxis:{tickformat:'.0%', rangemode:'tozero'}}));
+
+  // job
+  const job = [...D.job].sort((a,b)=>a.rate-b.rate);
+  plot('c_job', [bar({orientation:'h', y:job.map(r=>r.job), x:job.map(r=>r.rate),
+      error_x:{type:'data', symmetric:false, array:job.map(r=>r.hi-r.rate), arrayminus:job.map(r=>r.rate-r.lo), color:t.muted, thickness:1.2, width:3},
+      customdata:job.map(r=>[r.n,r.lo,r.hi]), hovertemplate:'%{y}: %{x:.1%}<br>95%% CI %{customdata[1]:.1%}–%{customdata[2]:.1%}<br>n = %{customdata[0]:,}<extra></extra>'}, t.s[0])],
+    layout(t, {showlegend:false, margin:{l:100}, xaxis:{tickformat:'.0%'}}));
+
+  // models
+  const tm = D.test_metrics;
+  plot('c_models', [
+    bar({x:tm.map(r=>sh(r.model)), y:tm.map(r=>r.ap), name:'Average precision', hovertemplate:'%{x}<br>AP %{y:.3f}<extra></extra>', text:tm.map(r=>r.ap.toFixed(3)), textposition:'outside', textfont:{color:t.text2, size:11}}, t.s[0]),
+    bar({x:tm.map(r=>sh(r.model)), y:tm.map(r=>r.auc), name:'ROC AUC', hovertemplate:'%{x}<br>AUC %{y:.3f}<extra></extra>', text:tm.map(r=>r.auc.toFixed(3)), textposition:'outside', textfont:{color:t.text2, size:11}}, t.s[1]),
+  ], layout(t, {barmode:'group', margin:{b:56}, xaxis:{tickangle:0}, yaxis:{range:[0,0.8]}, shapes:[{type:'line', xref:'paper', x0:0, x1:1, y0:core.test_prevalence, y1:core.test_prevalence, line:{color:t.muted, dash:'dash', width:1.5}}],
+     annotations:[{xref:'paper', x:0, y:core.test_prevalence, text:'random AP', showarrow:false, xanchor:'left', yanchor:'top', yshift:-2, font:{size:11, color:t.muted}}]}));
+
+  // kpi
+  const kp = D.kpi, kc = [t.neutral, t.s[1], t.s[0]];
+  plot('c_kpi', [bar({x:kp.map(r=>sh(r.method)), y:kp.map(r=>r.per_1000_calls), marker:{color:kc, cornerradius:4},
+      customdata:kp.map(r=>[r.subscribers,r.contacted,r.CPA_THB,r.lift_vs_random]),
+      text:kp.map(r=>fmt(r.per_1000_calls)), textposition:'outside', textfont:{color:t.text2},
+      hovertemplate:'%{x}<br>%{y:.0f} per 1,000 calls<br>%{customdata[0]:,.0f} of %{customdata[1]:,} contacted<br>CPA %{customdata[2]:,.0f} ฿ · lift %{customdata[3]:.2f}×<extra></extra>'})],
+    layout(t, {showlegend:false, margin:{b:56}, xaxis:{tickangle:0}, yaxis:{rangemode:'tozero'}}));
+
+  // capacity
+  const metric = $('#capMetric').value;
+  const models = [...new Set(D.capacity.map(r=>r.model))];
+  const mcol = {'Random expected':t.neutral};
+  models.filter(m=>m!=='Random expected').forEach((m,i)=>mcol[m]=t.s[i]);
+  const capTraces = models.map(m => {
+    const rows = D.capacity.filter(r=>r.model===m).sort((a,b)=>a.fraction-b.fraction);
+    const y = rows.map(r => metric==='found' && m==='Random expected' ? r.random_expected : r[metric]);
+    return {type:'scatter', mode:'lines+markers', name:m, x:rows.map(r=>r.fraction), y,
+      line:{color:mcol[m], width:2, dash:m==='Random expected'?'dash':'solid'}, marker:{size:8, color:mcol[m], line:{color:t.surface, width:2}},
+      hovertemplate:`${m}<br>โทร %{x:.0%} แรก<br>${metric==='found'?'%{y:,.0f} ราย':metric==='lift'?'%{y:.2f}×':'%{y:.1%}'}<extra></extra>`};
+  });
+  plot('c_cap', capTraces, layout(t, {xaxis:{tickformat:'.0%', title:{text:'สัดส่วนรายชื่อที่โทร (เรียงตามคะแนน)', font:{size:12}}},
+      yaxis:{tickformat: metric==='found'?',':metric==='lift'?'.2f':'.0%'}, hovermode:'x unified'}));
+
+  // score bands
+  const bsplits = [...new Set(D.bands.map(r=>r.split))];
+  plot('c_bands', bsplits.map(sp => { const rows = D.bands.filter(r=>r.split===sp);
+      return bar({name:sp, x:rows.map(r=>r.band), y:rows.map(r=>r.rate), customdata:rows.map(r=>[r.found,r.records]),
+        hovertemplate:`${sp} · %{x}<br>%{y:.1%} (%{customdata[0]} / %{customdata[1]})<extra></extra>`}, SC[sp]); }),
+    layout(t, {barmode:'group', yaxis:{tickformat:'.0%'}, xaxis:{tickangle:-30}}));
+
+  // importance
+  const imp = [...D.importance].sort((a,b)=>a.importance-b.importance);
+  plot('c_imp', [bar({orientation:'h', y:imp.map(r=>r.feature), x:imp.map(r=>r.importance),
+      error_x:{type:'data', array:imp.map(r=>r.sd), color:t.muted, thickness:1.2, width:3},
+      marker:{color:imp.map(r=>r.importance>0?t.s[0]:t.neutral), cornerradius:4},
+      hovertemplate:'%{y}: %{x:.4f}<extra></extra>'})],
+    layout(t, {showlegend:false, margin:{l:90}}));
+
+  renderScenario(t);
+
+  // per call
+  plot('c_call', SPLITS.map(sp => { const rows = D.per_call.filter(r=>r.split===sp);
+      return {type:'scatter', mode:'lines+markers', name:sp, x:rows.map(r=>r.call), y:rows.map(r=>r.rate),
+        customdata:rows.map(r=>[r.at_risk,r.subscribed,r.lo,r.hi]),
+        line:{color:SC[sp], width:2}, marker:{size:8, color:SC[sp], line:{color:t.surface, width:2}},
+        hovertemplate:`${sp} · สายที่ %{x}<br>%{y:.1%} (%{customdata[1]:,} / %{customdata[0]:,})<br>95%% CI %{customdata[2]:.1%}–%{customdata[3]:.1%}<extra></extra>`}; }),
+    layout(t, {yaxis:{tickformat:'.0%', rangemode:'tozero'}, xaxis:{dtick:1, title:{text:'สายที่', font:{size:12}}}}));
+
+  // channel
+  const chans = ['cellular','telephone'];
+  plot('c_chan', chans.map((c,i) => { const rows = SPLITS.map(sp => D.channel.find(r=>r.split===sp && r.contact===c));
+      return bar({name:c==='cellular'?'มือถือ':'โทรศัพท์บ้าน', x:SPLITS, y:rows.map(r=>r.rate),
+        error_y:{type:'data', symmetric:false, array:rows.map(r=>r.hi-r.rate), arrayminus:rows.map(r=>r.rate-r.lo), color:t.muted, thickness:1.2, width:3},
+        customdata:rows.map(r=>[r.k,r.n]), hovertemplate:`${c} · %{x}<br>%{y:.1%} (%{customdata[0]:,} / %{customdata[1]:,})<extra></extra>`}, i?t.s[1]:t.s[0]); }),
+    layout(t, {barmode:'group', yaxis:{tickformat:'.0%'}}));
+
+  // age
+  const bandsOrder = [...new Set(D.age.map(r=>r.band))];
+  plot('c_age', SPLITS.filter(sp=>D.age.some(r=>r.split===sp)).map(sp => { const rows = bandsOrder.map(b => D.age.find(r=>r.split===sp && r.band===b));
+      return bar({name:sp, x:bandsOrder, y:rows.map(r=>r?r.rate:null), customdata:rows.map(r=>r?r.n:0),
+        hovertemplate:`${sp} · %{x}<br>%{y:.1%} (n = %{customdata:,})<extra></extra>`}, SC[sp]); }),
+    layout(t, {barmode:'group', yaxis:{tickformat:'.0%'}}));
+
+  // ab
+  plot('c_ab', [{type:'scatter', mode:'lines+markers+text', x:D.ab.map(r=>r.uplift_pp), y:D.ab.map(r=>r.n_per_arm),
+      text:D.ab.map(r=>fmt(r.n_per_arm)), textposition:'top right', textfont:{color:t.text2, size:11},
+      line:{color:t.s[0], width:2}, marker:{size:8, color:t.s[0], line:{color:t.surface, width:2}},
+      hovertemplate:'+%{x:.0f} จุด<br>%{y:,} คนต่อกลุ่ม<extra></extra>'}],
+    layout(t, {showlegend:false, yaxis:{type:'log', tickvals:[300,1000,3000,10000,30000], ticktext:['300','1k','3k','10k','30k'], range:[2.4,4.4], title:{text:'คนต่อกลุ่ม (log)', font:{size:12}}}, xaxis:{title:{text:'อัตราสมัครที่เพิ่มขึ้น (จุด %)', font:{size:12}}, dtick:1}}));
+}
+
+function renderScenario(t = theme()){
+  const c = +$('#sCost').value, n = +$('#sCalls').value, v = +$('#sValue').value;
+  const sc = D.scenarios.find(r => r.cost_per_call===c && r.assumed_calls===n && r.value_per_subscriber===v);
+  if (!sc) return;
+  const ad = D.adaptive.find(r => r.scenario===sc.scenario);
+  const se = D.sensitivity.find(r => r.scenario===sc.scenario && r.family==='ML') || D.sensitivity.find(r => r.scenario===sc.scenario);
+  const lab = ['สัดส่วนคงที่<br>(เลือกจาก Validation)', 'เกณฑ์ปรับ<br>ตามรอบล่าสุด', 'โทรทุกคน'];
+  const tv = [ad.test_fixed_net, ad.test_adaptive_net, ad.test_contact_all_net];
+  const col = [t.s[0], t.s[2], t.neutral];
+  const mk = (x, y, title, colors) => {
+    const lo = Math.min(0, ...y), hi = Math.max(0, ...y);
+    return [[bar({x, y, marker:{color:colors, cornerradius:4}, text:y.map(z=>fmt(z/1e3)+'k ฿'), textposition:'outside', textfont:{color:t.text2},
+      hovertemplate:'%{x}<br>%{y:,.0f} ฿<extra></extra>'})],
+      layout(t, {showlegend:false, title:{text:title, font:{size:13, color:t.text}, x:0, xanchor:'left'}, margin:{t:36},
+        yaxis:{tickformat:'~s', ticksuffix:' ฿', range:[lo*1.25, hi*1.2 || 1]},
+        shapes:[{type:'line', xref:'paper', x0:0, x1:1, y0:0, y1:0, line:{color:t.muted, width:1}}]})];
+  };
+  const [d1,l1] = mk(lab, tv, 'Test: มูลค่าสุทธิหลังหักค่าติดต่อ', col);
+  plot('c_scen_test', d1, l1);
+  const [d2,l2] = mk(lab.slice(0,2), [ad.validation_fixed_net, ad.validation_adaptive_net], 'Validation: นโยบายเดียวกัน', col.slice(0,2));
+  plot('c_scen_val', d2, l2);
+  const best = Math.max(...tv), bestI = tv.indexOf(best);
+  $('#scenNote').innerHTML = `ต้นทุนต่อลูกค้า <b>${fmt(sc.cost_per_customer,1)} ฿</b> · จุดคุ้มทุน: โทรเมื่ออัตราสมัครที่คาด &gt; <b>${pct(ad.break_even)}</b> · ` +
+    (se ? `สัดส่วนที่เลือกจาก Validation <b>${pct(se.validation_fraction,0)}</b> (${fmt(se.selected)} ราย, พบผู้สมัคร ${fmt(se.found)}) · ` : '') +
+    `เกณฑ์ปรับตามรอบโทร ${fmt(ad.test_adaptive_selected)} ราย · ดีที่สุดบน Test: <b>${lab[bestI].replace('<br>',' ')}</b>`;
+}
+
+['#sCost','#sCalls','#sValue'].forEach(id => $(id).addEventListener('change', () => renderScenario()));
+$('#capMetric').addEventListener('change', render);
+
+/* ---------- STP table ---------- */
+$('#stpTable').innerHTML = '<tr><th>กลุ่ม</th><th>รายการ (Test)</th><th>สัดส่วน</th><th>อยู่ใน 20% แรก</th><th>อัตราสมัคร Test</th><th>อัตราสมัคร Validation</th></tr>' +
+  D.stp.map(r => `<tr><td>${r.segment}</td><td>${fmt(r.test_records)}</td><td>${pct(r.share)}</td><td>${pct(r.in_top20)}</td><td>${pct(r.test_rate)}</td><td>${pct(r.rate_Validation)}</td></tr>`).join('');
+
+/* ---------- gallery ---------- */
+const groups = ['All', ...new Set(D.gallery.map(g=>g.group))];
+let cur = 'All';
+function drawGallery(){
+  $('#chips').innerHTML = groups.map(g => `<button class="chip ${g===cur?'on':''}" data-g="${g}">${g} (${g==='All'?D.gallery.length:D.gallery.filter(x=>x.group===g).length})</button>`).join('');
+  $('#gallery').innerHTML = D.gallery.filter(g => cur==='All' || g.group===cur)
+    .map(g => `<figure data-src="${g.src}"><img src="${g.src}" alt="${g.name}"><figcaption>${g.group} · ${g.name}</figcaption></figure>`).join('');
+}
+$('#chips').addEventListener('click', e => { if (e.target.dataset.g){ cur = e.target.dataset.g; drawGallery(); } });
+$('#gallery').addEventListener('click', e => { const f = e.target.closest('figure'); if (!f) return; $('#lightbox img').src = f.dataset.src; $('#lightbox').style.display='flex'; });
+$('#lightbox').addEventListener('click', () => $('#lightbox').style.display='none');
+drawGallery();
+$('#links').innerHTML = (D.has_notebook ? '<a class="btn" href="notebook.html">เปิดโน้ตบุ๊กฉบับเต็ม (HTML)</a>' : '') + '<a class="btn ghost" href="results.zip">ดาวน์โหลดผลทั้งหมด (.zip)</a>';
+
+/* ---------- theme ---------- */
+const root = document.documentElement;
+try { const s = localStorage.getItem('theme'); if (s) root.dataset.theme = s; } catch(e){}
+$('#themeBtn').addEventListener('click', () => {
+  const dark = root.dataset.theme ? root.dataset.theme==='dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  root.dataset.theme = dark ? 'light' : 'dark';
+  try { localStorage.setItem('theme', root.dataset.theme); } catch(e){}
+  render();
+});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', render);
+render();
+</script>
+</body>
+</html>

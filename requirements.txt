@@ -1,0 +1,9 @@
+# Pinned to the versions the notebook was built with (pandas 3.x breaks it)
+pandas==2.3.3
+numpy==2.5.3
+scikit-learn==1.9.0
+scipy==1.18.1
+matplotlib==3.11.2
+nbconvert
+nbclient
+ipykernel

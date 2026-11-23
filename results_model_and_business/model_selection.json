@@ -1,0 +1,10 @@
+{
+  "selection_metric": "Validation average precision; tie: ROC AUC then name",
+  "core_model": "Logistic regression 10.0",
+  "family_models": [
+    "Logistic regression 10.0",
+    "Gradient boosting (6, 0.05)",
+    "Random forest (8, 20)"
+  ],
+  "cost_used_for_model_selection": false
+}

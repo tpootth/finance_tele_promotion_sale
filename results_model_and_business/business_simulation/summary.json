@@ -1,0 +1,22 @@
+{
+  "source_url": "https://archive.ics.uci.edu/static/public/222/bank+marketing.zip",
+  "source_sha256": "74adfc578bf77a7ff4bb1ba4a9f8709d9e3c6907342959c2c8416847e0afb4d8",
+  "rows": 41188,
+  "seed": 42,
+  "batch_size": 500,
+  "base_scenario": "call50_calls2.9_value1500",
+  "base_model": "Logistic regression 10.0",
+  "model_selection_metric": "Validation AP, independent of costs",
+  "validation_fraction": 0.61,
+  "test_net_value": 1855875.0,
+  "assumptions": "Illustrative costs/values; retrospective observed-outcome accounting, not causal profit",
+  "test_previously_inspected": true,
+  "adaptive_window_batches": 1,
+  "test_adaptive_net_value": 2650885.0,
+  "versions": {
+    "python": "3.13.18",
+    "numpy": "2.5.3",
+    "pandas": "2.3.3",
+    "sklearn": "1.9.0"
+  }
+}
