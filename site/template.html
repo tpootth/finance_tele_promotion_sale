@@ -5,32 +5,32 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bank Call Prioritization — Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700&family=Noto+Serif+Thai:wght@500;700&family=Inter:wght@400;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
 <script src="vendor/plotly.min.js"></script>
 <script src="vendor/marked.min.js"></script>
 <style>
 :root{
   color-scheme:light;
-  --bg:#f4f3ef; --surface:#fcfcfb; --border:#e3e1da;
-  --text:#0b0b0b; --text2:#52514e; --muted:#8a8984; --grid:#ecebe6;
-  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --neutral:#9a9993;
-  --good:#0a7d32; --accent:#2a78d6;
+  --bg:#f7f0e6; --surface:#fffbf5; --border:#ead9c4;
+  --text:#2b1d14; --text2:#6b5444; --muted:#9c8676; --grid:#f0e3d3;
+  --s1:#c2541b; --s2:#0b7f9e; --s3:#a8780f; --s4:#8b4f9e; --neutral:#c4b3a2;
+  --good:#c2541b; --accent:#c2541b; --hero:#2b1d14; --heroText:#fbeee0; --rule:#c2541b;
 }
 @media (prefers-color-scheme:dark){
   :root:where(:not([data-theme="light"])){
     color-scheme:dark;
-    --bg:#121211; --surface:#1a1a19; --border:#2e2e2c;
-    --text:#f0efec; --text2:#c3c2b7; --muted:#8f8e86; --grid:#2a2a28;
-    --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --neutral:#77766f;
-    --good:#3fbf6a; --accent:#3987e5;
+    --bg:#14100d; --surface:#1c1714; --border:#3a2c22;
+    --text:#f6ebdf; --text2:#cdb8a6; --muted:#97806e; --grid:#2c231c;
+    --s1:#d6622a; --s2:#2690ad; --s3:#b98618; --s4:#a874b8; --neutral:#6e5c4f;
+    --good:#e8894f; --accent:#d6622a; --hero:#0c0907; --heroText:#f6ebdf; --rule:#d6622a;
   }
 }
 :root[data-theme="dark"]{
   color-scheme:dark;
-  --bg:#121211; --surface:#1a1a19; --border:#2e2e2c;
-  --text:#f0efec; --text2:#c3c2b7; --muted:#8f8e86; --grid:#2a2a28;
-  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --neutral:#77766f;
-  --good:#3fbf6a; --accent:#3987e5;
+  --bg:#14100d; --surface:#1c1714; --border:#3a2c22;
+  --text:#f6ebdf; --text2:#cdb8a6; --muted:#97806e; --grid:#2c231c;
+  --s1:#d6622a; --s2:#2690ad; --s3:#b98618; --s4:#a874b8; --neutral:#6e5c4f;
+  --good:#e8894f; --accent:#d6622a; --hero:#0c0907; --heroText:#f6ebdf; --rule:#d6622a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,"Noto Sans Thai",system-ui,sans-serif;line-height:1.55}
@@ -98,6 +98,23 @@ table.data th{color:var(--text2);font-weight:600}
 .btn{display:inline-block;background:var(--accent);color:#fff;text-decoration:none;padding:9px 14px;border-radius:8px;font-weight:600;font-size:14px;margin-right:8px}
 .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
 footer{color:var(--muted);font-size:13px;max-width:1200px;margin:0 auto;padding:0 24px 40px}
+
+h1,h2,h3,.qh,.tile .val,.big b{font-family:"Playfair Display","Noto Serif Thai",Georgia,serif}
+header{max-width:none;margin:0;background:var(--hero);color:var(--heroText);padding:56px max(24px,calc((100vw - 1152px)/2)) 40px;border-bottom:3px solid var(--rule)}
+header h1{font-size:40px;font-weight:700;letter-spacing:-.01em}
+header h1::before{content:"FINANCE · TELE-SALES ANALYTICS";display:block;font:600 12px/1 Inter,sans-serif;letter-spacing:.18em;color:var(--accent);margin-bottom:14px}
+header p{color:color-mix(in srgb,var(--heroText) 78%,transparent)}
+header .meta{color:color-mix(in srgb,var(--heroText) 50%,transparent)}
+section>h2{font-size:26px;font-weight:700;padding-bottom:6px;border-bottom:1px solid var(--border);margin-bottom:10px}
+section>h2::after{content:"";display:block;width:44px;height:3px;background:var(--accent);margin-top:8px}
+.card{border-radius:4px;box-shadow:0 1px 0 var(--border)}
+.tile{border-top:3px solid var(--accent)}
+.tile .val{font-size:34px}
+.qn{background:var(--accent);color:#fff}
+nav a:hover{color:var(--accent)}
+.btn{border-radius:4px}
+.chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.md th{background:color-mix(in srgb,var(--accent) 8%,var(--surface))}
 </style>
 </head>
 <body>
