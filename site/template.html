@@ -99,7 +99,12 @@ table.data th{color:var(--text2);font-weight:600}
 .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--border)}
 footer{color:var(--muted);font-size:13px;max-width:1200px;margin:0 auto;padding:0 24px 40px}
 
-h1,h2,h3,.qh,.tile .val,.big b{font-family:"Playfair Display","Noto Serif Thai",Georgia,serif}
+h1,h2,h3,.qh{font-family:"Playfair Display","Noto Serif Thai",Georgia,serif}
+.tile .val,.big b,.qn{font-family:Inter,"Noto Sans Thai",system-ui,sans-serif;font-variant-numeric:lining-nums tabular-nums;font-feature-settings:"lnum","tnum"}
+.tile .val{font-weight:600;letter-spacing:-.03em}
+.big b{font-weight:600;letter-spacing:-.02em}
+.qn{font-weight:600}
+body{font-variant-numeric:lining-nums tabular-nums}
 header{max-width:none;margin:0;background:var(--hero);color:var(--heroText);padding:56px max(24px,calc((100vw - 1152px)/2)) 40px;border-bottom:3px solid var(--rule)}
 header h1{font-size:40px;font-weight:700;letter-spacing:-.01em}
 header h1::before{content:"FINANCE · TELE-SALES ANALYTICS";display:block;font:600 12px/1 Inter,sans-serif;letter-spacing:.18em;color:var(--accent);margin-bottom:14px}
@@ -109,7 +114,7 @@ section>h2{font-size:26px;font-weight:700;padding-bottom:6px;border-bottom:1px s
 section>h2::after{content:"";display:block;width:44px;height:3px;background:var(--accent);margin-top:8px}
 .card{border-radius:4px;box-shadow:0 1px 0 var(--border)}
 .tile{border-top:3px solid var(--accent)}
-.tile .val{font-size:34px}
+.tile .val{font-size:32px}
 .qn{background:var(--accent);color:#fff}
 nav a:hover{color:var(--accent)}
 .btn{border-radius:4px}
